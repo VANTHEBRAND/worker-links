@@ -12,9 +12,17 @@ jobs:
   deploy:
     # Limit this GitHub environment to the main branch before adding its deploy token.
     environment: production
+    if: vars.WORKER_LINKS_DEPLOY_ENABLED == 'true'
     name: Worker Deploy
     runs-on: ubuntu-latest
     steps:
+    - name: Check production deployment configuration
+      env:
+        TOKEN_CONFIGURED: ${{ secrets.WORKER_LINKS_DEPLOY_TOKEN != '' }}
+        ACCOUNT_CONFIGURED: ${{ vars.WORKER_LINKS_ACCOUNT_ID != '' }}
+      run: |
+        test "$TOKEN_CONFIGURED" = true
+        test "$ACCOUNT_CONFIGURED" = true
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
