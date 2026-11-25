@@ -5,13 +5,28 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
+    # Limit this GitHub environment to the main branch before adding its deploy token.
+    environment: production
+    if: vars.WORKER_LINKS_DEPLOY_ENABLED == 'true'
     name: Worker Deploy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - name: Check production deployment configuration
+      env:
+        TOKEN_CONFIGURED: ${{ secrets.WORKER_LINKS_DEPLOY_TOKEN != '' }}
+        ACCOUNT_CONFIGURED: ${{ vars.WORKER_LINKS_ACCOUNT_ID != '' }}
+      run: |
+        test "$TOKEN_CONFIGURED" = true
+        test "$ACCOUNT_CONFIGURED" = true
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       name: Setup Node.js
       with:
         node-version: '18'
@@ -20,6 +35,6 @@ jobs:
       run: yarn install --frozen-lockfile
     - name: Deploy Worker to Cloudflare
       env:
-        CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.WORKER_LINKS_DEPLOY_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ vars.WORKER_LINKS_ACCOUNT_ID }}
       run: yarn deploy
